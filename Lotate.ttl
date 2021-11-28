@@ -1,13 +1,14 @@
 ;Teraterm ver: 4.105
-;SSH接続をしてログを取得するマクロ
+;定期的にログを取得するマクロ
+;ステータスの移行を確認することを目的として作成。
 ;踏み台サーバ無しで単独で動作する
 
 ;SSH接続先情報
-HOSTNAME = 'server01'
-IPADDR = '192.168.10.22'
-USERNAME = 'root'
-PASSWORD = 'P@ssw0rd'
-;ENABLE_PASSWORD = 'cisco'
+HOSTNAME = 'l3sw01'
+IPADDR = '192.168.10.108'
+USERNAME = 'cisco'
+PASSWORD = 'cisco'
+ENABLE_PASSWORD = 'cisco'
 
 ;プロンプトの定義
 Prompt1 = '$'
@@ -70,6 +71,16 @@ Logwrite LOGMSG2
 Logwrite LOGMSG3
 Logwrite '=============================='#13#10
 
-;Waitregex Prompt1 Prompt2 Prompt3 Prompt4
-;Sendln ENABLE_PASSWORD
 Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+Sendln ENABLE_PASSWORD
+Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+
+While 1 > 0
+	Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+	Sendln 'show ntp associations'
+	Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+	Sendln 'show spanning-tree'
+	Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+	Sendln 'show ip bgp summary'
+	mpause 200
+endwhile
