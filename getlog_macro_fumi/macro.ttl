@@ -1,0 +1,108 @@
+;パラメータの定義
+;バッチファイルから受け取る引数
+getdate DATE
+strcopy DATE 1 4 YEAR
+strcopy DATE 6 2 MONTH
+strcopy DATE 9 2 DAY
+strconcat TODAY YEAR
+strconcat TODAY MONTH
+strconcat TODAY DAY
+
+HOSTNAME = param2
+CMDLIST = param3
+LOGFILE_NAME = param4
+strconcat LOGDIR param5
+strconcat LOGDIR '_'
+strconcat LOGDIR TODAY
+
+;プロンプトの定義
+Prompt1 = '$'
+Prompt2 = ':'
+Prompt3 = '#'
+Prompt4 = '>'
+
+;ログディレクトリの作成
+;EXECMD = 'cmd /c md '
+;strconcat EXECMD LOGDIR
+;exec EXECMD
+
+Getdir LOGDIR
+Strconcat LOGDIR '\'
+Strconcat LOGDIR 'log'
+Foldercreate LOGDIR
+
+;##############################
+;### 踏み台サーバにログイン ###
+;##############################
+
+fileopen fh '.\id.txt' 0
+filereadln fh buf
+strsplit buf ',' 9
+
+IPADDRESS = groupmatchstr1
+USERNAME = groupmatchstr2
+PASSWORD = groupmatchstr3
+fileclose fh
+
+LOGIN = IPADDRESS
+strconcat LOGIN ' /ssh /2 /auth=password /user='
+strconcat LOGIN USERNAME
+strconcat LOGIN ' /passwd='
+strconcat LOGIN PASSWORD
+connect LOGIN
+
+;NW機器にログイン
+LOGIN2 = 'bash LOGIN_SHELL/'
+strconcat LOGIN2 HOSTNAME
+strconcat LOGIN2 '.sh'
+sendln LOGIN2
+Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+
+;ログメッセージのヘッダー
+LOGMSG1 = 'HOSTNAME:'
+Strconcat LOGMSG1 HOSTNAME
+Strconcat LOGMSG1 '\n'
+Strspecial LOGMSG1
+
+;LOGMSG2 = 'IPADDR:'
+;Strconcat LOGMSG2 IPADDR
+;Strconcat LOGMSG2 '\n'
+;Strspecial LOGMSG2
+
+LOGMSG3 = 'TIMESTAMP:'
+Strconcat LOGMSG3 TODAY
+Strconcat LOGMSG3 '\n'
+Strspecial LOGMSG3
+
+;ログ取得開始
+Logopen LOGDIR 0 0
+Logwrite '=============================='#13#10
+Logwrite LOGMSG1
+;Logwrite LOGMSG2
+Logwrite LOGMSG3
+Logwrite '=============================='#13#10
+
+Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+
+
+;############################
+;### コマンドリストを実行 ###
+;############################
+
+fileopen fh2 CMDLIST 0
+
+:freadloop
+filereadln fh CMDLIST
+if result goto breakloop
+	sendln CMDLIST
+	Waitregex Prompt1 Prompt2 Prompt3 Prompt4
+goto freadloop
+
+:breakloop
+
+fileclose fh2
+
+logclose
+closett
+end
+
